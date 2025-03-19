@@ -1,0 +1,155 @@
+Triggers 
+Scenario 2:
+Write a trigger to update Child record when updating parents record when active is checked.
+
+trigger UpdateEmailChild on Account (after update) {
+    if (Trigger.isAfter && Trigger.isUpdate)
+    {
+        for (Account acc : Trigger.new) {
+        // Check if 'Active' checkbox is ticked and was previously unticked
+        if (acc.Active__c == 'Yes' && Trigger.oldMap.get(acc.id).Active__c=='No' ) {
+            
+            // Query contacts related to the updated account
+            //List<Contact> contactsToUpdate = [ SELECT Id,Email FROM Contact WHERE AccountId = :acc.Id ];
+            List<Contact> contactsToUpdate = [ SELECT Id,Email FROM Contact WHERE AccountId = :acc.Id ];
+
+            // Update the email field for related contacts
+            for (Contact con : contactsToUpdate) 
+            {
+                con.LastName = acc.Name; // Assuming 'Email' on Account is the source
+                con.MobilePhone=acc.Phone;
+                update contactsToUpdate;
+            }
+            
+            
+        }
+    }
+        
+    }
+
+}
+
+
+
+
+
+Scenario 1: 'Annual Revenue cannot be less than 1000 while updating and Creating new Record
+
+trigger TriggerExclusive on Account (before insert,before update) {
+    //List<Account> accList=new List<Account>();
+    if(Trigger.IsBefore && (Trigger.Isinsert || Trigger.Isupdate))
+    {
+        for(Account acc:Trigger.new)
+        {
+            if(acc.AnnualRevenue<=1000)
+            {
+                acc.AddError('AnnualRevenue can not be less then 1000');
+            }
+        }
+    }
+
+}
+ 
+Custom Setting:
+
+•	List – Same data for every user in ORG
+•	Hierarchy – Different Data for different user in org based upon Profile, user and Default Orgs 
+
+List custom Setting data can be fetch using following method:
+
+a.	List<CountryPhoneCodes> mylist =CountryPhoneCodes.getAll().values();
+b.	CountryPhoneCodes mylist=CountryPhoneCodes.getInstance('India');
+
+•	We can also perform SOQL on Custom Setting but it’s not required
+
+List<CountryPhoneCodes> myList=[SELECT Id,Phone_Codes__c, Name FROM CountryPhoneCodes__c];
+
+
+Fetching List Custom Setting Data 
+Method 1:
+•	CountryPhoneCodes__c mycust= CountryPhoneCodes__c.getInstance('India');
+
+•	list <CountryPhoneCodes__c> mycust= [SELECT Id,Phone_Codes__c, Name FROM CountryPhoneCodes__c ];
+for (CountryPhoneCodes__c css: mycust)
+{
+system.debug(css.Phone_Codes__c +' :--- '+ css.Name);
+}
+
+
+Fetching Hierarchy Custom Setting Data
+ 
+AmazonBigSales__c amdis=AmazonBigSales__c.getValues(Userinfo.getUserId());
+system.debug(amdis.Discount__c);
+
+
+AmazonBigSales__c bigsale=AmazonBigSales__c.getValues(userinfo.getuserId());
+system.debug(bigsale.Name +' and Discount: '+ bigsale.Discount__c);
+
+Fetching Hierarchy Data Using SOQL Query:
+list<AmazonBigSales__c> amazonsale=[select id,Name,Discount__c from AmazonBigSales__c];
+for(AmazonBigSales__c amz:amazonsale)
+{
+    
+    system.debug(amz);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Data Validation in Salesforce
+
+1)Specific Profile user not Authorized to change this Field
+  ---------------------------------------------------------
+
+AND(
+	$Profile.Name='Marketing Profile',
+	ISCHNAGED(Phone)
+
+)
+
+
+AND(
+$Profile.Name = "Marketing User",
+ISCHANGED(Phone)
+)
+
+
+2)Phone Number should be Ten Digits and start with 99:
+-----------------------------------------------------
+AND(				
+OR(LEN(Phone)  <> 10, 
+LEFT(Phone, 2) <> '99' 
+)
+)
+
+
+
+
+AND(
+    ISPICKVAL(LeadSource, 'Phone Inquiry'),
+    
+
+OR(
+        ISBLANK(Phone),
+        ISBLANK(MobilePhone)
+  )
+)
+
+
+
